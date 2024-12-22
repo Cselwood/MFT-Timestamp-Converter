@@ -8,10 +8,11 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 2rem auto;
+            min-width: 600px;
+            max-width: 70%;
             text-align: center;
-            padding: 2rem;
             margin: 0 auto;
-            max-width: 60%;
         }
 
         input,
@@ -21,35 +22,71 @@
             font-size: 1rem;
         }
 
-        #result {
-            margin-top: 1rem;
-            font-weight: bold;
+        #steps {
+            text-align: left;
+            margin-top: 2rem;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
         }
     </style>
 </head>
 
 <body>
-    <h1>NTFS Timestamp Converter</h1>
-    <p>Enter the full, MFT, little-endian timestamp with no spaces:</p>
-    <input type="text" id="hexInput" placeholder="ffffffffffffffff">
+    <h1>MFT Timestamp Converter</h1>
+    <p>Enter the full, MFT, hex timestamp</p>
+    <input type="text" id="hexInput" placeholder="(e.g., daee6ec60650db01)"/>
     <button onclick="convert()">Convert</button>
+
     <div id="result"></div>
+    <div id="steps"></div>
 
     <script>
         function convert() {
             const hex = document.getElementById('hexInput').value.trim();
-            if (!hex) return alert('Please enter a valid hexadecimal timestamp.');
+            if (!hex || hex.length !== 16) {
+                alert('Please enter a valid 16-character NTFS hex timestamp.');
+                return;
+            }
 
+            // Step 1: Little-endian conversion
             const littleEndian = hex.match(/.{1,2}/g).reverse().join('');
-            const fileTimeDecimal = BigInt('0x' + littleEndian);
+            document.getElementById('steps').innerHTML = `
+                <h2>Conversion Steps</h2>
+                <h3>1. Reversed (Little-endian to Big-endian):</h3>
+                <pre>${littleEndian}</pre>
+            `;
 
-            const seconds = Number(fileTimeDecimal / BigInt(10000000));
-            const FILETIME_EPOCH_OFFSET = 11644473600;
+            // Step 2: Hex to Decimal
+            const decimalValue = BigInt('0x' + littleEndian);
+            document.getElementById('steps').innerHTML += `
+                <h3>2. Converted to Decimal:</h3>
+                <pre>${decimalValue}</pre>
+            `;
+
+            // Step 3: Convert to Seconds
+            const seconds = Number(decimalValue / BigInt(10000000)); // Convert 100-nanoseconds to seconds
+            const FILETIME_EPOCH_OFFSET = 11644473600; // Offset from 1601-01-01 to 1970-01-01
             const unixTimestamp = seconds - FILETIME_EPOCH_OFFSET;
 
-            const date = new Date(unixTimestamp * 1000);
-            document.getElementById('result').innerText =
-                "Readable Date (UTC): " + date.toISOString();
+            // Step 4: Convert to Human-Readable Date
+            const date = new Date(unixTimestamp * 1000); // Convert to milliseconds for JS Date
+            document.getElementById('steps').innerHTML += `
+                <h3>3. Unix Timestamp (Seconds since 1970-01-01):</h3>
+                <pre>${unixTimestamp}</pre>
+                <h3>4. Human-Readable Date (UTC):</h3>
+                <pre>${date.toISOString()}</pre>
+            `;
+
+            // Final Output
+            document.getElementById('result').innerHTML = `
+                <h2>Human-Readable Date:</h2>
+                <p><strong>${date.toISOString()}</strong></p>
+            `;
         }
     </script>
 </body>
