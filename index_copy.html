@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFT Timestamp Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 2rem;
+            margin: 0 auto;
+            max-width: 60%;
+        }
+
+        input,
+        button {
+            margin: 0.5rem;
+            padding: 0.5rem;
+            font-size: 1rem;
+        }
+
+        #result {
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>NTFS Timestamp Converter</h1>
+    <p>Enter the full, MFT, little-endian timestamp with no spaces:</p>
+    <input type="text" id="hexInput" placeholder="ffffffffffffffff">
+    <button onclick="convert()">Convert</button>
+    <div id="result"></div>
+
+    <script>
+        function convert() {
+            const hex = document.getElementById('hexInput').value.trim();
+            if (!hex) return alert('Please enter a valid hexadecimal timestamp.');
+
+            const littleEndian = hex.match(/.{1,2}/g).reverse().join('');
+            const fileTimeDecimal = BigInt('0x' + littleEndian);
+
+            const seconds = Number(fileTimeDecimal / BigInt(10000000));
+            const FILETIME_EPOCH_OFFSET = 11644473600;
+            const unixTimestamp = seconds - FILETIME_EPOCH_OFFSET;
+
+            const date = new Date(unixTimestamp * 1000);
+            document.getElementById('result').innerText =
+                "Readable Date (UTC): " + date.toISOString();
+        }
+    </script>
+</body>
+
+</html>
